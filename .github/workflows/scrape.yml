@@ -1,0 +1,49 @@
+# Nome do workflow (vai aparecer na aba "Actions")
+name: 🤖 Scraper de Vídeo
+
+# Gatilho: "workflow_dispatch"
+# Isso adiciona o botão "Run workflow" e define os campos de input
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'O prompt para gerar o vídeo'
+        required: true
+        default: 'um astronauta cavalgando um cavalo na lua'
+
+# Tarefas que o workflow vai executar
+jobs:
+  scrape-video:
+    # Rodar no sistema operacional mais recente do Ubuntu (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Baixa o código do seu repositório para a máquina virtual
+      - name: 1. Checkout do código
+        uses: actions/checkout@v4
+
+      # 2. Configura o ambiente Node.js (versão 20)
+      - name: 2. Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3. Instala as dependências (o "puppeteer" do package.json)
+      - name: 3. Instalar dependências (npm install)
+        run: npm install
+
+      # 4. Roda o script de scraping!
+      - name: 4. Rodar o Scraper
+        run: node scrape.js
+        env:
+          # Esta linha mágica passa o input do usuário (lá de cima)
+          # para uma variável de ambiente que o script .js consegue ler
+          PROMPT_DO_USUARIO: ${{ github.event.inputs.prompt }}
+          
+      # 5. (Opcional) Salva o screenshot de erro, se ele existir
+      - name: 5. Upload do Screenshot em caso de falha
+        if: failure() # Só roda se o passo 4 falhar
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-de-erro
+          path: erro-screenshot.png
